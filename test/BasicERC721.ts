@@ -2,40 +2,42 @@ import { expect } from "chai"
 import { deployments, ethers, getNamedAccounts } from "hardhat"
 import { makeInterfaceId } from "@openzeppelin/test-helpers"
 
+export const setup721Fixture = deployments.createFixture(async () => {
+	await deployments.fixture()
+	const signers = await getNamedAccounts()
+
+	const name = "ProtoToken"
+	const symbol = "PT"
+	const baseURI = "ipfs://base-uri/"
+	const contractURI = "ipfs://contract-uri"
+	const owner = signers.deployer
+
+	const contract = await ethers.deployContract(
+		"BasicERC721",
+		[name, symbol, baseURI, contractURI, owner],
+		await ethers.getSigner(signers.deployer)
+	)
+
+	return {
+		contract,
+		contractAddress: await contract.getAddress(),
+		deployer: signers.deployer,
+		accounts: await ethers.getSigners(),
+		contractConstructor: {
+			name,
+			symbol,
+			baseURI,
+			contractURI,
+			owner,
+		},
+	}
+})
+
 describe("BasicERC721", () => {
-	const setupFixture = deployments.createFixture(async () => {
-		await deployments.fixture()
-		const signers = await getNamedAccounts()
 
-		const name = "ProtoToken"
-		const symbol = "PT"
-		const baseURI = "ipfs://base-uri/"
-		const contractURI = "ipfs://contract-uri"
-		const owner = signers.deployer
-
-		const contract = await ethers.deployContract(
-			"BasicERC721",
-			[name, symbol, baseURI, contractURI, owner],
-			await ethers.getSigner(signers.deployer)
-		)
-
-		return {
-			contract,
-			contractAddress: await contract.getAddress(),
-			deployer: signers.deployer,
-			accounts: await ethers.getSigners(),
-			contractConstructor: {
-				name,
-				symbol,
-				baseURI,
-				contractURI,
-				owner,
-			},
-		}
-	})
 
 	it("Should Return Valid Contract Configurations Passed In Constructor", async () => {
-		const { contractConstructor, contract } = await setupFixture()
+		const { contractConstructor, contract } = await setup721Fixture()
 
 		expect(await contract.name()).to.equal(contractConstructor.name)
 		expect(await contract.symbol()).to.equal(contractConstructor.symbol)
@@ -45,7 +47,7 @@ describe("BasicERC721", () => {
 
 	describe("Minting Functionality", () => {
 		it("Should Increase Total Supply When Minting", async () => {
-			const { contract, deployer } = await setupFixture()
+			const { contract, deployer } = await setup721Fixture()
 
 			expect(await contract.totalSupply()).to.equal(0)
 
@@ -59,7 +61,7 @@ describe("BasicERC721", () => {
 		})
 
 		it("Should Mint Tokens With Correct Token IDs", async () => {
-			const { contract, accounts } = await setupFixture()
+			const { contract, accounts } = await setup721Fixture()
 
 			await contract.safeMint(await accounts[0].getAddress())
 
@@ -73,7 +75,7 @@ describe("BasicERC721", () => {
 		})
 
 		it("Should Allow Minting Only to Contract Owner", async () => {
-			const { contract, accounts } = await setupFixture()
+			const { contract, accounts } = await setup721Fixture()
 
 			await expect(contract.connect(accounts[1]).safeMint(await accounts[1].getAddress()))
 				.to.be.revertedWithCustomError(contract, "OwnableUnauthorizedAccount")
@@ -83,7 +85,7 @@ describe("BasicERC721", () => {
 
 	describe("Contract And Token Metadata", () => {
 		it("Should Return Correct Token URI", async () => {
-			const { contract, accounts, contractConstructor } = await setupFixture()
+			const { contract, accounts, contractConstructor } = await setup721Fixture()
 
 			await contract.safeMint(await accounts[0].getAddress())
 
@@ -91,7 +93,7 @@ describe("BasicERC721", () => {
 		})
 
 		it("Should Return Correct Token URI", async () => {
-			const { contract } = await setupFixture()
+			const { contract } = await setup721Fixture()
 
 			await expect(contract.tokenURI(1))
 				.to.be.revertedWithCustomError(contract, "ERC721NonexistentToken")
@@ -99,7 +101,7 @@ describe("BasicERC721", () => {
 		})
 
 		it("Should Return Correct Contract URI", async () => {
-			const { contract, contractConstructor } = await setupFixture()
+			const { contract, contractConstructor } = await setup721Fixture()
 
 			expect(await contract.contractURI()).to.equal(contractConstructor.contractURI)
 		})
@@ -107,7 +109,7 @@ describe("BasicERC721", () => {
 
 	describe("InterfaceId", () => {
 		it("Should Validate IERC721", async () => {
-			const { contract } = await setupFixture()
+			const { contract } = await setup721Fixture()
 
 			const erc721InterfaceId = makeInterfaceId.ERC165([
 				"balanceOf(address)",
@@ -125,7 +127,7 @@ describe("BasicERC721", () => {
 		})
 
 		it("Should Validate IERC721Enumerable", async () => {
-			const { contract } = await setupFixture()
+			const { contract } = await setup721Fixture()
 
 			const erc721EnumerableInterfaceId = makeInterfaceId.ERC165([
 				"totalSupply()",

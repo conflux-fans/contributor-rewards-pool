@@ -7,6 +7,8 @@ import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { ERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import { ERC721Pausable } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Pausable.sol";
 import { ERC721Burnable } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+import { IERC165 } from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import { IDualSpaceNFT } from "../interfaces/IDualSpaceNFT.sol";
 
 /**
  * This file was generated with Openzeppelin Wizard and later modified.
@@ -17,7 +19,8 @@ contract BasicERC721 is
 	ERC721Enumerable,
 	ERC721Pausable,
 	Ownable,
-	ERC721Burnable
+	ERC721Burnable,
+	IDualSpaceNFT
 {
 	using Strings for uint256;
 
@@ -106,7 +109,14 @@ contract BasicERC721 is
 
 	function supportsInterface(
 		bytes4 interfaceId
-	) public view override(ERC721, ERC721Enumerable) returns (bool) {
+	) public view override(IERC165, ERC721, ERC721Enumerable) returns (bool) {
 		return super.supportsInterface(interfaceId);
+	}
+
+    function getTokenBatchRatio(uint256 tokenId) public view returns (uint8) {
+		return 2;
+	}
+    function getTokenRarity(uint256 tokenId) public pure returns (uint8) {
+		return 3;
 	}
 }
